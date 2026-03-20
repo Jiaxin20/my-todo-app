@@ -151,8 +151,17 @@ export default function App() {
     
     // 如果切换到第二天，将未完成任务自动添加到第二天
     if (days === 1) {
-      const todayTasks = tasks.filter(t => t.date === selectedDate && !t.completed);
-      todayTasks.forEach(task => {
+      const seenRootIds = new Set();
+      const todayTasks = tasks.filter(t => {
+        if (t.date !== selectedDate) return false;
+        if (seenRootIds.has(t.rootId)) return false;
+        seenRootIds.add(t.rootId);
+        return true;
+      });
+    
+    todayTasks.forEach(task => {
+      // 只复制未完成的任务
+      if (task.completed) return;
         // 检查目标日期是否已有相同 rootId 的任务
         const alreadyExists = tasks.some(t => t.rootId === task.rootId && t.date === newDate);
         if (!alreadyExists) {
@@ -205,7 +214,7 @@ export default function App() {
       const now = getCurrentTime();
       const newCompleted = !task.completed;
       // 找到所有相同 rootId 的任务，同步完成状态
-      setTasks(tasks.map(t => {
+      setTasks(prevTasks => prevTasks.map(t => {
         if (t.rootId === task.rootId) {
           return { 
             ...t, 
@@ -222,7 +231,7 @@ export default function App() {
     // 删除任务时，删除所有相同 rootId 的任务
     const task = tasks.find(t => t.id === id);
     if (task) {
-      setTasks(tasks.filter(t => t.rootId !== task.rootId));
+      setTasks(prevTasks => prevTasks.filter(t => t.rootId !== task.rootId));
     }
   };
   
