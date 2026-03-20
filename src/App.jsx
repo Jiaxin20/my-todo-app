@@ -70,6 +70,10 @@ export default function App() {
   const [editingExpense, setEditingExpense] = useState(null);
   const [editingJob, setEditingJob] = useState(null);
   const [editingStatus, setEditingStatus] = useState(null);
+
+  // ================= 新增：简历搜索状态 =================
+  const [jobSearchText, setJobSearchText] = useState('');
+  const [jobSearchStatus, setJobSearchStatus] = useState('');
   
   // ================= 提醒窗口状态 =================
   const [showDeadlineAlert, setShowDeadlineAlert] = useState(false);
@@ -1080,20 +1084,20 @@ export default function App() {
                 </div>
               </div>
 
-              {/* 汇总表 */}
+              {/* 汇总表 - 修改 */}
               <div className="border-t border-gray-200 pt-8">
                 <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
                   <Table className="text-emerald-500" /> 
                   投递汇总表
                   <span className="text-sm font-normal text-gray-500">
-                    (共 {jobs.length} 条记录)
+                    (共 {filteredJobs.length} 条记录)
                   </span>
                 </h2>
                 
-                {jobs.length === 0 ? (
+                {filteredJobs.length === 0 ? (
                   <div className="text-center py-12 text-gray-400">
                     <Table size={48} className="mx-auto mb-3 opacity-20" />
-                    <p>暂无投递记录</p>
+                    <p>{jobs.length === 0 ? '暂无投递记录' : '暂无匹配的投递记录'}</p>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -1108,7 +1112,7 @@ export default function App() {
                         </tr>
                       </thead>
                       <tbody>
-                        {jobs.map(job => (
+                        {filteredJobs.map(job => (
                           <tr key={job.id} className="hover:bg-gray-50">
                             <td className="border border-gray-200 px-4 py-3 text-sm text-gray-700">{job.company}</td>
                             <td className="border border-gray-200 px-4 py-3 text-sm text-gray-700">{job.position}</td>
@@ -1120,8 +1124,12 @@ export default function App() {
                             </td>
                             <td className="border border-gray-200 px-4 py-3">
                               <div className="flex gap-2">
-                                <button onClick={() => setEditingJob({ id: job.id, company: job.company, position: job.position })} className="text-blue-500 hover:text-blue-700"><Edit2 size={16} /></button>
-                                <button onClick={() => deleteJob(job.id)} className="text-red-500 hover:text-red-700"><Trash2 size={16} /></button>
+                                <button onClick={() => setEditingJob({ id: job.id, company: job.company, position: job.position })} className="text-blue-500 hover:text-blue-700">
+                                  <Edit2 size={16} />
+                                </button>
+                                <button onClick={() => deleteJob(job.id)} className="text-red-500 hover:text-red-700">
+                                  <Trash2 size={16} />
+                                </button>
                               </div>
                             </td>
                           </tr>
