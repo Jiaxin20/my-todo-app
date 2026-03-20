@@ -553,6 +553,14 @@ export default function App() {
                     <li key={exp.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       {editingExpense?.id === exp.id ? (
                         <div className="flex-1 flex items-center gap-2 mr-2">
+                          {/* 新增：编辑时的类别选择 */}
+                          <select 
+                            value={editingExpense.category} 
+                            onChange={(e) => setEditingExpense({...editingExpense, category: e.target.value})} 
+                            className="border rounded px-2 py-1 bg-white text-sm"
+                          >
+                            {EXPENSE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          </select>
                           <input type="text" value={editingExpense.description} onChange={(e) => setEditingExpense({...editingExpense, description: e.target.value})} className="flex-1 border rounded px-2 py-1" />
                           <input type="number" value={editingExpense.amount} onChange={(e) => setEditingExpense({...editingExpense, amount: e.target.value})} className="w-24 border rounded px-2 py-1" />
                           <button onClick={saveEditExpense} className="text-green-600 hover:text-green-700"><Check size={18} /></button>
@@ -600,111 +608,196 @@ export default function App() {
                 <PieChart className="text-purple-700" /> 
                 {selectedMonth} 数据概览
               </h2>
-              {/* 新增：类别消费看板 */}
-              <div className="mb-8">
-                <h3 className="text-lg font-bold mb-4 text-gray-800 border-b pb-2">📊 消费类别分布</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  {(() => {
-                    // 计算各类别总额
-                    const categoryStats = {};
-                    getDataByMonth(selectedMonth).filteredExpenses.forEach(exp => {
-                      const cat = exp.category || '其他';
-                      categoryStats[cat] = (categoryStats[cat] || 0) + exp.amount;
-                  });
-          
-                    // 转为数组排序
-                    const sortedStats = Object.entries(categoryStats)
-                      .sort(([, a], [, b]) => b - a)
-                      .slice(0, 8); // 只显示前 8 类
 
-                    if (sortedStats.length === 0) return <p className="text-gray-400 text-sm col-span-full">暂无支出数据</p>;
-
-                    return sortedStats.map(([cat, amount]) => (
-                      <div key={cat} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center">
-                        <span className="text-gray-500 text-xs mb-1">{cat}</span>
-                        <span className="text-xl font-bold text-gray-800">¥{amount.toFixed(0)}</span>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
-
+              {/* 顶部统计卡片 */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-2xl border border-purple-200 shadow-md hover:shadow-lg transition-shadow duration-300">
                   <p className="text-purple-700 text-sm font-semibold mb-2 flex items-center gap-2">
-                    <CheckCircle2 size={16} /> 已完成任务总数
+                    <CheckCircle2 size={16} /> 本月完成任务
                   </p>
                   <p className="text-4xl font-bold text-purple-900">
-                    {tasks.filter(t => t.completed).length}
+                    {getDataByMonth(selectedMonth).filteredTasks.filter(t => t.completed).length}
                     <span className="text-base font-normal text-purple-700 ml-2">项</span>
-                    </p>
+                  </p>
                 </div>
                 <div className="bg-yellow-50 p-6 rounded-xl border border-yellow-100">
-                  <p className="text-yellow-600 text-sm font-medium mb-1">总支出</p>
+                  <p className="text-yellow-600 text-sm font-medium mb-1">本月总支出</p>
                   <p className="text-3xl font-bold text-yellow-900">
-                    ¥ {getDataByMonth(selectedMonth).filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
+                    ¥{getDataByMonth(selectedMonth).filteredExpenses.reduce((sum, exp) => sum + exp.amount, 0).toFixed(2)}
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="text-lg font-bold mb-4 text-gray-800 border-b pb-2">✅ 已完成任务</h3>
-                  <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                    {getDataByMonth(selectedMonth).filteredTasks.filter(t => t.completed).length === 0 ? 
-                      <p className="text-gray-400 text-sm">暂无已完成任务</p> : 
-                      getDataByMonth(selectedMonth).filteredTasks.filter(t => t.completed).map(task => (
-                        <div key={task.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                          <div className="flex justify-between items-start mb-2">
-                            <span className="text-gray-700 font-medium">{task.text}</span>
-                          </div>
-                          <div className="text-xs text-gray-500 space-y-1">
-                            <div>创建：{task.createdDate}</div>
-                            <div>完成：{task.completedDate}</div>
-                            {task.deadline && <div>截止：{task.deadline}</div>}
-                          </div>
-                        </div>
-                    ))}
+              {/* ================= 月度账单子模块 ================= */}
+              <div className="mb-10">
+                <h3 className="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2 border-b pb-2">
+                  <DollarSign className="text-yellow-600" size={20} /> 月度账单
+                </h3>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* 左边：账单明细 */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-4">
+                    <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <Table size={18} /> 支出明细
+                    </h4>
+                    <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                      {getDataByMonth(selectedMonth).filteredExpenses.length === 0 ? 
+                        <p className="text-gray-400 text-sm py-4 text-center">暂无支出记录</p> : 
+                        getDataByMonth(selectedMonth).filteredExpenses
+                          .sort((a, b) => new Date(b.date) - new Date(a.date))
+                          .map(exp => (
+                            <div key={exp.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center">
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs px-2 py-0.5 rounded bg-blue-50 text-blue-600 border border-blue-100">{exp.category}</span>
+                                  <p className="text-gray-700 font-medium">{exp.description}</p>
+                                </div>
+                                <p className="text-xs text-gray-400">{exp.date}</p>
+                              </div>
+                              <span className="text-red-500 font-bold">-¥{exp.amount}</span>
+                            </div>
+                        ))}
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold mb-4 text-gray-800 border-b pb-2">⏳ 未完成任务</h3>
-                  <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                    {getDataByMonth(selectedMonth).filteredTasks.filter(t => !t.completed).length === 0 ? 
-                      <p className="text-gray-400 text-sm">暂无未完成任务</p> : 
-                      getDataByMonth(selectedMonth).filteredTasks.filter(t => !t.completed).map(task => (
-                        <div key={task.id} className="bg-yellow-50 p-3 rounded-lg border border-yellow-100">
-                          <div className="flex justify-between items-start mb-2">
-                            <span className="text-gray-700 font-medium">{task.text}</span>
-                            {task.deadline && (
-                              <span className={`px-2 py-0.5 rounded text-xs ${getDeadlineStatus(task.deadline)?.color || 'text-gray-600 bg-gray-100'}`}>
-                                {getDeadlineStatus(task.deadline)?.text}
-                              </span>
-                            )}
+
+                  {/* 右边：可视化图表 */}
+                  <div className="bg-white rounded-xl border border-gray-200 p-4">
+                    <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                      <PieChart size={18} /> 消费类别分布
+                    </h4>
+                    {(() => {
+                      const categoryStats = {};
+                      getDataByMonth(selectedMonth).filteredExpenses.forEach(exp => {
+                        const cat = exp.category || '其他';
+                        categoryStats[cat] = (categoryStats[cat] || 0) + exp.amount;
+                      });
+                      
+                      const total = Object.values(categoryStats).reduce((sum, val) => sum + val, 0);
+                      const sortedStats = Object.entries(categoryStats).sort(([, a], [, b]) => b - a);
+
+                      if (sortedStats.length === 0) {
+                        return <div className="h-64 flex items-center justify-center text-gray-400 text-sm">暂无支出数据</div>;
+                      }
+
+                      // 颜色配置
+                      const colors = ['#6366f1', '#8b5cf6', '#a855f7', '#d946ef', '#ec4899', '#f43f5e', '#f97316', '#eab308', '#84cc16', '#22c55e', '#14b8a6', '#06b6d4'];
+                      
+                      // 计算饼图扇形
+                      let cumulativePercent = 0;
+                      const slices = sortedStats.map(([cat, amount], index) => {
+                        const percent = total > 0 ? (amount / total) * 100 : 0;
+                        const startAngle = cumulativePercent * 3.6;
+                        cumulativePercent += percent;
+                        const endAngle = cumulativePercent * 3.6;
+                        
+                        // 计算 SVG 路径
+                        const x1 = 50 + 40 * Math.cos((startAngle - 90) * Math.PI / 180);
+                        const y1 = 50 + 40 * Math.sin((startAngle - 90) * Math.PI / 180);
+                        const x2 = 50 + 40 * Math.cos((endAngle - 90) * Math.PI / 180);
+                        const y2 = 50 + 40 * Math.sin((endAngle - 90) * Math.PI / 180);
+                        const largeArc = percent > 50 ? 1 : 0;
+                        
+                        return {
+                          cat,
+                          amount,
+                          percent,
+                          color: colors[index % colors.length],
+                          path: `M 50 50 L ${x1} ${y1} A 40 40 0 ${largeArc} 1 ${x2} ${y2} Z`
+                        };
+                      });
+
+                      return (
+                        <div className="space-y-4">
+                          {/* 饼图 */}
+                          <div className="flex justify-center">
+                            <svg viewBox="0 0 100 100" className="w-48 h-48">
+                              {slices.map((slice, i) => (
+                                <path 
+                                  key={i} 
+                                  d={slice.path} 
+                                  fill={slice.color} 
+                                  stroke="white" 
+                                  strokeWidth="0.5"
+                                  className="hover:opacity-80 transition-opacity cursor-pointer"
+                                >
+                                  <title>{`${slice.cat}: ¥${slice.amount.toFixed(2)} (${slice.percent.toFixed(1)}%)`}</title>
+                                </path>
+                              ))}
+                              <circle cx="50" cy="50" r="15" fill="white" />
+                            </svg>
                           </div>
-                          <div className="text-xs text-gray-500">
-                            <div>创建：{task.createdDate}</div>
+                          
+                          {/* 图例 */}
+                          <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto">
+                            {slices.map((slice, i) => (
+                              <div key={i} className="flex items-center gap-2 text-xs">
+                                <div className="w-3 h-3 rounded" style={{ backgroundColor: slice.color }}></div>
+                                <span className="text-gray-600 flex-1">{slice.cat}</span>
+                                <span className="font-medium text-gray-800">¥{slice.amount.toFixed(0)}</span>
+                                <span className="text-gray-400">({slice.percent.toFixed(1)}%)</span>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                    ))}
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
-              
-              <div className="mt-8">
-                <h3 className="text-lg font-bold mb-4 text-gray-800 border-b pb-2">💰 支出明细</h3>
-                <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
-                  {getDataByMonth(selectedMonth).filteredExpenses.length === 0 ? 
-                    <p className="text-gray-400 text-sm">暂无支出记录</p> : 
-                    getDataByMonth(selectedMonth).filteredExpenses.map(exp => (
-                      <div key={exp.id} className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex justify-between items-center">
-                        <div>
-                          <p className="text-gray-700 font-medium">{exp.description}</p>
-                          <p className="text-xs text-gray-400">{exp.date}</p>
-                        </div>
-                        <span className="text-red-500 font-bold">-¥{exp.amount}</span>
-                      </div>
-                  ))}
+
+              {/* ================= 月度待办子模块 ================= */}
+              <div>
+                <h3 className="text-lg font-bold mb-4 text-gray-800 flex items-center gap-2 border-b pb-2">
+                  <CheckCircle2 className="text-blue-600" size={20} /> 月度待办
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* 已完成任务 */}
+                  <div>
+                    <h4 className="font-semibold text-green-700 mb-3 flex items-center gap-2">
+                      <CheckCircle2 size={18} /> 已完成 ({getDataByMonth(selectedMonth).filteredTasks.filter(t => t.completed).length})
+                    </h4>
+                    <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                      {getDataByMonth(selectedMonth).filteredTasks.filter(t => t.completed).length === 0 ? 
+                        <p className="text-gray-400 text-sm">暂无已完成任务</p> : 
+                        getDataByMonth(selectedMonth).filteredTasks.filter(t => t.completed).map(task => (
+                          <div key={task.id} className="bg-green-50 p-3 rounded-lg border border-green-100">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-gray-700 font-medium line-through">{task.text}</span>
+                            </div>
+                            <div className="text-xs text-gray-500 space-y-1">
+                              <div>创建：{task.createdDate}</div>
+                              <div>完成：{task.completedDate}</div>
+                              {task.deadline && <div>截止：{task.deadline}</div>}
+                            </div>
+                          </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* 未完成任务 */}
+                  <div>
+                    <h4 className="font-semibold text-orange-700 mb-3 flex items-center gap-2">
+                      <Circle size={18} /> 未完成 ({getDataByMonth(selectedMonth).filteredTasks.filter(t => !t.completed).length})
+                    </h4>
+                    <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
+                      {getDataByMonth(selectedMonth).filteredTasks.filter(t => !t.completed).length === 0 ? 
+                        <p className="text-gray-400 text-sm">暂无未完成任务</p> : 
+                        getDataByMonth(selectedMonth).filteredTasks.filter(t => !t.completed).map(task => (
+                          <div key={task.id} className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-gray-700 font-medium">{task.text}</span>
+                              {task.deadline && (
+                                <span className={`px-2 py-0.5 rounded text-xs ${getDeadlineStatus(task.deadline)?.color || 'text-gray-600 bg-gray-100'}`}>
+                                  {getDeadlineStatus(task.deadline)?.text}
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              <div>创建：{task.createdDate}</div>
+                            </div>
+                          </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
