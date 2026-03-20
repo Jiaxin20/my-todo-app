@@ -493,47 +493,37 @@ export default function App() {
 
                 <ul className="space-y-2">
                   {getTasksByDate(selectedDate).length === 0 && <p className="text-gray-400 text-sm py-2">暂无待办事项</p>}
-                  {getTasksByDate(selectedDate).map(task => (
-                    <li key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      {editingTask?.id === task.id ? (
-                        <div className="flex-1 flex items-center gap-2 mr-2">
-                          <input type="text" value={editingTask.description} onChange={(e) => setEditingTask({...editingTask, description: e.target.value})} className="flex-1 border rounded px-2 py-1" />
-                          <input type="date" value={editingTask.deadline} onChange={(e) => setEditingTask({...editingTask, deadline: e.target.value})} className="border rounded px-2 py-1" />
-                          <button onClick={saveEditTask} className="text-green-600 hover:text-green-700"><Check size={18} /></button>
-                          <button onClick={() => setEditingTask(null)} className="text-gray-500 hover:text-gray-700"><X size={18} /></button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">{task.category || '其他'}</span>
-                              <span className="text-gray-700">{task.description}</span>
+                  {getTasksByDate(selectedDate).map(task => {
+                    const deadlineStatus = getDeadlineStatus(task.deadline);
+                    return (
+                      <li key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                        {editingTask?.id === task.id ? (
+                          <div className="flex-1 flex items-center gap-2 mr-2">
+                            <input type="text" value={editingTask.text} onChange={(e) => setEditingTask({...editingTask, text: e.target.value})} className="flex-1 border rounded px-2 py-1" autoFocus />
+                            <input type="date" value={editingTask.deadline || ''} onChange={(e) => setEditingTask({...editingTask, deadline: e.target.value})} className="border rounded px-2 py-1" />
+                            <button onClick={saveEditTask} className="text-green-600 hover:text-green-700"><Check size={18} /></button>
+                            <button onClick={() => setEditingTask(null)} className="text-gray-500 hover:text-gray-700"><X size={18} /></button>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => toggleTask(task.id)}>
+                              {task.completed ? <CheckCircle2 className="text-green-500 shrink-0" /> : <Circle className="text-gray-400 shrink-0" />}
+                              <span className={task.completed ? 'line-through text-gray-400' : 'text-gray-700'}>{task.text}</span>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-red-500 font-bold">-¥{task.amount}</span>
-                            <button onClick={() => setEditingTask({ id: task.id, description: task.description, deadline: task.deadline, category: task.category || '其他' })} className="text-blue-500 hover:text-blue-700 p-1"><Edit2 size={16} /></button>
-                            <button onClick={() => deleteTask(task.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16} /></button>
-                          </div>
-                        </>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">{exp.category || '其他'}</span>
-                              <span className="text-gray-700">{exp.description}</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {deadlineStatus && (
+                                <span className={`px-2 py-1 rounded text-xs font-medium ${deadlineStatus.color}`}>
+                                  {deadlineStatus.text}
+                                </span>
+                              )}
+                              <button onClick={() => setEditingTask({ id: task.id, rootId: task.rootId, text: task.text, deadline: task.deadline })} className="text-blue-500 hover:text-blue-700 p-1"><Edit2 size={16} /></button>
+                              <button onClick={() => deleteTask(task.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16} /></button>
                             </div>
-                          </div>
-                          <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-red-500 font-bold">-¥{exp.amount}</span>
-                            <button onClick={() => setEditingExpense({ id: exp.id, description: exp.description, amount: exp.amount, category: exp.category || '其他' })} className="text-blue-500 hover:text-blue-700 p-1"><Edit2 size={16} /></button>
-                            <button onClick={() => deleteExpense(exp.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16} /></button>
-                          </div>
-                        </>
-                      )}
-                    </li>
-                  ))}
+                          </>
+                        )}
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
 
