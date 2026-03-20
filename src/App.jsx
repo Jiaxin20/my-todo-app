@@ -351,12 +351,13 @@ export default function App() {
     return job.statusUpdates[job.statusUpdates.length - 1].status;
   };
   
-  // 过滤投递记录（搜索功能）
+  // ================= 过滤后的投递记录 =================
   const filteredJobs = jobs.filter(job => {
     const searchText = jobSearchText.toLowerCase();
     const matchText = job.company.toLowerCase().includes(searchText) || 
                       job.position.toLowerCase().includes(searchText);
-    const matchStatus = jobSearchStatus ? getCurrentStatus(job) === jobSearchStatus : true;
+    const currentStatus = getCurrentStatus(job);
+    const matchStatus = jobSearchStatus ? currentStatus === jobSearchStatus : true;
     return matchText && matchStatus;
   });
 
@@ -1047,21 +1048,19 @@ export default function App() {
 
               {/* 搜索框 */}
               <div className="mb-6 bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                <h3 className="text-sm font-bold text-emerald-800 mb-3 flex items-center gap-2">
-                  <Table size={16} /> 搜索投递记录
-                </h3>
-                <div className="flex flex-col md:flex-row gap-3">
+                <h3 className="text-sm font-bold text-emerald-800 mb-3">搜索投递记录</h3>
+                <div className="flex flex-col sm:flex-row gap-3">
                   <input 
                     type="text" 
                     value={jobSearchText} 
                     onChange={(e) => setJobSearchText(e.target.value)} 
                     placeholder="搜索公司或岗位..." 
-                    className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 transition-all duration-200" 
+                    className="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400" 
                   />
                   <select 
                     value={jobSearchStatus} 
                     onChange={(e) => setJobSearchStatus(e.target.value)}
-                    className="border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100 bg-white"
+                    className="border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-emerald-400 bg-white"
                   >
                     <option value="">全部状态</option>
                     <option value="已投递">已投递</option>
@@ -1069,15 +1068,13 @@ export default function App() {
                     <option value="笔试">笔试</option>
                     <option value="一面">一面</option>
                     <option value="二面">二面</option>
-                    <option value="三面">三面</option>
                     <option value="HR 面">HR 面</option>
                     <option value="Offer">Offer</option>
                     <option value="已拒绝">已拒绝</option>
-                    <option value="已入职">已入职</option>
                   </select>
                   <button 
                     onClick={() => { setJobSearchText(''); setJobSearchStatus(''); }}
-                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors font-medium"
+                    className="px-6 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300"
                   >
                     清空
                   </button>
