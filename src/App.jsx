@@ -492,22 +492,30 @@ export default function App() {
                 </div>
 
                 <ul className="space-y-2">
-                  {getExpensesByDate(selectedDate).length === 0 && <p className="text-gray-400 text-sm py-2">暂无支出记录</p>}
-                  {getExpensesByDate(selectedDate).map(exp => (
-                    <li key={exp.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                      {editingExpense?.id === exp.id ? (
+                  {getTasksByDate(selectedDate).length === 0 && <p className="text-gray-400 text-sm py-2">暂无待办事项</p>}
+                  {getTasksByDate(selectedDate).map(task => (
+                    <li key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                      {editingTask?.id === task.id ? (
                         <div className="flex-1 flex items-center gap-2 mr-2">
-                          <select 
-                            value={editingExpense.category} 
-                            onChange={(e) => setEditingExpense({...editingExpense, category: e.target.value})} 
-                            className="border rounded px-2 py-1 bg-white text-sm"
-                          >
-                            {EXPENSE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                          </select>
-                          <input type="text" value={editingExpense.description} onChange={(e) => setEditingExpense({...editingExpense, description: e.target.value})} className="flex-1 border rounded px-2 py-1" />
-                          <input type="number" value={editingExpense.amount} onChange={(e) => setEditingExpense({...editingExpense, amount: e.target.value})} className="w-24 border rounded px-2 py-1" />
-                          <button onClick={saveEditExpense} className="text-green-600 hover:text-green-700"><Check size={18} /></button>
-                          <button onClick={() => setEditingExpense(null)} className="text-gray-500 hover:text-gray-700"><X size={18} /></button>
+                          <input type="text" value={editingTask.description} onChange={(e) => setEditingTask({...editingTask, description: e.target.value})} className="flex-1 border rounded px-2 py-1" />
+                          <input type="date" value={editingTask.deadline} onChange={(e) => setEditingTask({...editingTask, deadline: e.target.value})} className="border rounded px-2 py-1" />
+                          <button onClick={saveEditTask} className="text-green-600 hover:text-green-700"><Check size={18} /></button>
+                          <button onClick={() => setEditingTask(null)} className="text-gray-500 hover:text-gray-700"><X size={18} /></button>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">{task.category || '其他'}</span>
+                              <span className="text-gray-700">{task.description}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-red-500 font-bold">-¥{task.amount}</span>
+                            <button onClick={() => setEditingTask({ id: task.id, description: task.description, deadline: task.deadline, category: task.category || '其他' })} className="text-blue-500 hover:text-blue-700 p-1"><Edit2 size={16} /></button>
+                            <button onClick={() => deleteTask(task.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16} /></button>
+                          </div>
+                        </>
                         </div>
                       ) : (
                         <>
