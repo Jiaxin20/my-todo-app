@@ -151,6 +151,7 @@ export default function App() {
     
     // 如果切换到第二天，将未完成任务自动添加到第二天
     if (days === 1) {
+      // 按 rootId 去重，只获取今天的任务
       const seenRootIds = new Set();
       const todayTasks = tasks.filter(t => {
         if (t.date !== selectedDate) return false;
@@ -158,17 +159,18 @@ export default function App() {
         seenRootIds.add(t.rootId);
         return true;
       });
-    
+
       todayTasks.forEach(task => {
         // 只复制未完成的任务
         if (task.completed) return;
+        
         // 检查目标日期是否已有相同 rootId 的任务
         const alreadyExists = tasks.some(t => t.rootId === task.rootId && t.date === newDate);
         if (!alreadyExists) {
           const newTask = {
             ...task,
             id: Date.now() + Math.random(),
-            rootId: task.rootId,  // 保持相同的 rootId
+            rootId: task.rootId,
             date: newDate,
             completed: false,
             completedDate: null,
@@ -247,8 +249,19 @@ export default function App() {
   };
   
   // 获取指定日期的任务
-  const getTasksByDate = (date) => tasks.filter(t => t.date === date);
-  
+  const getTasksByDate = (date) => {
+    const dateTasks = tasks.filter(t => t.date === date);
+    // 按 rootId 去重，如果有多个相同 rootId 的任务，取最新的那个
+    const seenRootIds = new Map();
+    dateTasks.forEach(task => {
+      const existing = seenRootIds.get(task.rootId);
+      if (!existing || task.id > existing.id) {
+        seenRootIds.set(task.rootId, task);
+      }
+    });
+    
+    return Array.from(seenRootIds.values());
+  };
   // 检查任务是否即将到期
   const isTaskUrgent = (task) => {
     if (!task.deadline || task.completed) return false;
