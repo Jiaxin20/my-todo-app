@@ -490,6 +490,7 @@ export default function App() {
                     <Plus size={18} /> 添加
                   </button>
                 </div>
+
                 <ul className="space-y-2">
                   {getExpensesByDate(selectedDate).length === 0 && <p className="text-gray-400 text-sm py-2">暂无支出记录</p>}
                   {getExpensesByDate(selectedDate).map(exp => (
