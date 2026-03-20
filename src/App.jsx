@@ -160,8 +160,15 @@ export default function App() {
     
     // 如果切换到第二天，将未完成任务自动添加到第二天
     if (days === 1) {
-      const todayTasks = getTasksByDate(selectedDate);
-      
+      // 按 rootId 去重，只获取今天的任务
+      const seenRootIds = new Set();
+      const todayTasks = tasks.filter(t => {
+        if (t.date !== selectedDate) return false;
+        if (seenRootIds.has(t.rootId)) return false;
+        seenRootIds.add(t.rootId);
+        return true;
+      });
+
       todayTasks.forEach(task => {
         // 只复制未完成的任务
         if (task.completed) return;
@@ -172,6 +179,7 @@ export default function App() {
           const newTask = {
             ...task,
             id: Date.now() + Math.random(),
+            rootId: task.rootId,
             date: newDate,
             completed: false,
             completedDate: null,
@@ -251,38 +259,35 @@ export default function App() {
   
   // 获取指定日期的任务
   const getTasksByDate = (date) => {
-    // 1. 先按 rootId 分组
-    const tasksByRootId = {};
-    tasks.forEach(task => {
-      if (!tasksByRootId[task.rootId]) {
-        tasksByRootId[task.rootId] = [];
-      }
-      tasksByRootId[task.rootId].push(task);
-    });
+  // 先按 rootId 分组
+  const tasksByRootId = {};
+  tasks.forEach(task => {
+    if (!tasksByRootId[task.rootId]) {
+      tasksByRootId[task.rootId] = [];
+    }
+    tasksByRootId[task.rootId].push(task);
+  });
+  
+  const result = [];
+  
+  Object.values(tasksByRootId).forEach(taskGroup => {
+    // 找到该日期的所有任务
+    const dateTasks = taskGroup.filter(t => t.date === date);
     
-    // 2. 对每个 rootId，找到该日期的任务
-    // 如果该日期有任务，返回最新的（按 id 排序）
-    // 如果该日期没有任务，但其他日期有已完成的任务，则不显示（因为已完成）
-    const result = [];
-    
-    Object.values(tasksByRootId).forEach(taskGroup => {
-      // 找到该日期的所有任务
-      const dateTasks = taskGroup.filter(t => t.date === date);
+    if (dateTasks.length > 0) {
+      // 按 id 排序，取最新的
+      dateTasks.sort((a, b) => b.id - a.id);
+      const latestTask = dateTasks[0];
       
-      if (dateTasks.length > 0) {
-        // 按 id 排序，取最新的
-        dateTasks.sort((a, b) => b.id - a.id);
-        const latestTask = dateTasks[0];
-        
-        // 只显示未完成的任务
-        if (!latestTask.completed) {
-          result.push(latestTask);
-        }
+      // 关键修复：只显示未完成的任务，或者已完成但创建日期就是今天的任务
+      if (!latestTask.completed || latestTask.createdDate === date) {
+        result.push(latestTask);
       }
-    });
-    
-    return result;
-  };
+    }
+  });
+  
+  return result;
+};
   // 检查任务是否即将到期
   const isTaskUrgent = (task) => {
     if (!task.deadline || task.completed) return false;
@@ -567,6 +572,11 @@ export default function App() {
                               {deadlineStatus && (
                                 <span className={`px-2 py-1 rounded text-xs font-medium ${deadlineStatus.color}`}>
                                   {deadlineStatus.text}
+                                </span>
+                              )}
+                              {task.completed && (
+                                <span className="text-xs text-gray-400">
+                                  完成：{task.completedDate?.split(' ')[0]}
                                 </span>
                               )}
                               <button onClick={() => setEditingTask({ id: task.id, rootId: task.rootId, text: task.text, deadline: task.deadline })} className="text-blue-500 hover:text-blue-700 p-1"><Edit2 size={16} /></button>
