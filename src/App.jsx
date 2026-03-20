@@ -159,9 +159,9 @@ export default function App() {
         return true;
       });
     
-    todayTasks.forEach(task => {
-      // 只复制未完成的任务
-      if (task.completed) return;
+      todayTasks.forEach(task => {
+        // 只复制未完成的任务
+        if (task.completed) return;
         // 检查目标日期是否已有相同 rootId 的任务
         const alreadyExists = tasks.some(t => t.rootId === task.rootId && t.date === newDate);
         if (!alreadyExists) {
