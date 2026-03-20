@@ -44,6 +44,9 @@ export default function App() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
   
+  // ================= 新增：消费类别常量 =================
+  const EXPENSE_CATEGORIES = ['餐饮', '交通', '购物', '娱乐', '其他'];
+
   // ================= 输入框状态 =================
   const [newTaskText, setNewTaskText] = useState('');
   const [newTaskDeadline, setNewTaskDeadline] = useState('');
@@ -53,6 +56,7 @@ export default function App() {
   const [newJobPosition, setNewJobPosition] = useState('');
   const [newStatusText, setNewStatusText] = useState('');
   const [activeJobIdForStatus, setActiveJobIdForStatus] = useState(null);
+  const [newExpenseCategory, setNewExpenseCategory] = useState('餐饮'); 
   
   // ================= 编辑状态 =================
   const [editingTask, setEditingTask] = useState(null);
@@ -72,7 +76,12 @@ export default function App() {
     const savedJobs = localStorage.getItem('jobs');
   
     if (savedTasks) setTasks(JSON.parse(savedTasks));
-    if (savedExpenses) setExpenses(JSON.parse(savedExpenses));
+    if (savedExpenses) {
+      const parsed = JSON.parse(savedExpenses);
+      // 兼容旧数据，如果没有 category 字段则默认为'其他'
+      const normalized = parsed.map(e => ({ ...e, category: e.category || '其他' }));
+      setExpenses(normalized);
+    };
     if (savedJobs) setJobs(JSON.parse(savedJobs));
   }, []);
 
@@ -250,15 +259,16 @@ export default function App() {
   // ================= 每日记录：记账操作 =================
   const addExpense = () => {
     if (!newExpenseAmount || !newExpenseDesc.trim()) return;
-    setExpenses([...expenses, { id: Date.now(), amount: parseFloat(newExpenseAmount), description: newExpenseDesc, date: selectedDate }]);
+    setExpenses([...expenses, { id: Date.now(), amount: parseFloat(newExpenseAmount), description: newExpenseDesc, date: selectedDate, category: newExpenseCategory }]);
     setNewExpenseAmount('');
     setNewExpenseDesc('');
+    setNewExpenseCategory('餐饮');
   };
   
   const deleteExpense = (id) => setExpenses(expenses.filter(e => e.id !== id));
   
   const saveEditExpense = () => {
-    setExpenses(expenses.map(e => e.id === editingExpense.id ? { ...e, description: editingExpense.description, amount: parseFloat(editingExpense.amount) } : e));
+    setExpenses(expenses.map(e => e.id === editingExpense.id ? { ...e, description: editingExpense.description, amount: parseFloat(editingExpense.amount), category: editingExpense.category } : e));
     setEditingExpense(null);
   };
   
@@ -509,6 +519,15 @@ export default function App() {
                   </span>
                 </h2>
                 <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                  {/* 新增：类别选择 */}
+                  <select 
+                    value={newExpenseCategory}
+                    onChange={(e) => setNewExpenseCategory(e.target.value)}
+                    className="border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-100 bg-white"
+                  >
+                    {EXPENSE_CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  </select>
+
                   <input 
                     type="text" 
                     value={newExpenseDesc} 
@@ -581,6 +600,35 @@ export default function App() {
                 <PieChart className="text-purple-700" /> 
                 {selectedMonth} 数据概览
               </h2>
+              {/* 新增：类别消费看板 */}
+              <div className="mb-8">
+                <h3 className="text-lg font-bold mb-4 text-gray-800 border-b pb-2">📊 消费类别分布</h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {(() => {
+                    // 计算各类别总额
+                    const categoryStats = {};
+                    getDataByMonth(selectedMonth).filteredExpenses.forEach(exp => {
+                      const cat = exp.category || '其他';
+                      categoryStats[cat] = (categoryStats[cat] || 0) + exp.amount;
+                  });
+          
+                    // 转为数组排序
+                    const sortedStats = Object.entries(categoryStats)
+                      .sort(([, a], [, b]) => b - a)
+                      .slice(0, 8); // 只显示前 8 类
+
+                    if (sortedStats.length === 0) return <p className="text-gray-400 text-sm col-span-full">暂无支出数据</p>;
+
+                    return sortedStats.map(([cat, amount]) => (
+                      <div key={cat} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center justify-center">
+                        <span className="text-gray-500 text-xs mb-1">{cat}</span>
+                        <span className="text-xl font-bold text-gray-800">¥{amount.toFixed(0)}</span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-6 rounded-2xl border border-purple-200 shadow-md hover:shadow-lg transition-shadow duration-300">
                   <p className="text-purple-700 text-sm font-semibold mb-2 flex items-center gap-2">
