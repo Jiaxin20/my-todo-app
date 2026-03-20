@@ -288,16 +288,27 @@ export default function App() {
   // ================= 每日记录：记账操作 =================
   const addExpense = () => {
     if (!newExpenseAmount || !newExpenseDesc.trim()) return;
-    setExpenses([...expenses, { id: Date.now(), amount: parseFloat(newExpenseAmount), description: newExpenseDesc, date: selectedDate, category: newExpenseCategory }]);
+    setExpenses([...expenses, { 
+      id: Date.now(), 
+      amount: parseFloat(newExpenseAmount), 
+      description: newExpenseDesc, 
+      date: selectedDate, 
+      category: newExpenseCategory 
+    }]);
     setNewExpenseAmount('');
     setNewExpenseDesc('');
     setNewExpenseCategory('餐饮');
   };
-  
+
   const deleteExpense = (id) => setExpenses(expenses.filter(e => e.id !== id));
-  
+
   const saveEditExpense = () => {
-    setExpenses(expenses.map(e => e.id === editingExpense.id ? { ...e, description: editingExpense.description, amount: parseFloat(editingExpense.amount), category: editingExpense.category } : e));
+    setExpenses(expenses.map(e => e.id === editingExpense.id ? { 
+      ...e, 
+      description: editingExpense.description, 
+      amount: parseFloat(editingExpense.amount), 
+      category: editingExpense.category 
+    } : e));
     setEditingExpense(null);
   };
   
@@ -512,7 +523,6 @@ export default function App() {
                     <Plus size={18} /> 添加
                   </button>
                 </div>
-
                 <ul className="space-y-2">
                   {getTasksByDate(selectedDate).length === 0 && <p className="text-gray-400 text-sm py-2">暂无待办事项</p>}
                   {getTasksByDate(selectedDate).map(task => {
@@ -559,7 +569,7 @@ export default function App() {
                   </span>
                 </h2>
                 <div className="flex flex-col sm:flex-row gap-2 mb-4">
-                  {/* 新增：类别选择 */}
+                  {/* 类别选择 */}
                   <select 
                     value={newExpenseCategory}
                     onChange={(e) => setNewExpenseCategory(e.target.value)}
@@ -593,9 +603,9 @@ export default function App() {
                     <li key={exp.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
                       {editingExpense?.id === exp.id ? (
                         <div className="flex-1 flex items-center gap-2 mr-2">
-                          {/* 新增：编辑时的类别选择 */}
+                          {/* 编辑时的类别选择 */}
                           <select 
-                            value={editingExpense.category} 
+                            value={editingExpense.category || '餐饮'} 
                             onChange={(e) => setEditingExpense({...editingExpense, category: e.target.value})} 
                             className="border rounded px-2 py-1 bg-white text-sm"
                           >
@@ -609,11 +619,14 @@ export default function App() {
                       ) : (
                         <>
                           <div className="flex-1">
-                            <span className="text-gray-700">{exp.description}</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-medium">{exp.category || '其他'}</span>
+                              <span className="text-gray-700">{exp.description}</span>
+                            </div>
                           </div>
                           <div className="flex items-center gap-3 shrink-0">
                             <span className="text-red-500 font-bold">-¥{exp.amount}</span>
-                            <button onClick={() => setEditingExpense({ id: exp.id, description: exp.description, amount: exp.amount })} className="text-blue-500 hover:text-blue-700 p-1"><Edit2 size={16} /></button>
+                            <button onClick={() => setEditingExpense({ id: exp.id, description: exp.description, amount: exp.amount, category: exp.category || '餐饮' })} className="text-blue-500 hover:text-blue-700 p-1"><Edit2 size={16} /></button>
                             <button onClick={() => deleteExpense(exp.id)} className="text-red-500 hover:text-red-700 p-1"><Trash2 size={16} /></button>
                           </div>
                         </>
