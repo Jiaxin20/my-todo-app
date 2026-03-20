@@ -452,7 +452,7 @@ export default function App() {
                     onKeyUp={(e) => e.key === 'Enter' && addTask()} 
                   />
                   <input 
-                    type="text" 
+                    type="date" 
                     value={newTaskDeadline} 
                     onChange={(e) => setNewTaskDeadline(e.target.value)} 
                     placeholder="yyyy/mm/dd"
