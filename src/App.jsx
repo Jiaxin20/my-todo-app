@@ -601,7 +601,7 @@ export default function App() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-lg font-bold mb-4 text-gray-800 border-b pb-2">✅ 已完成任务明细</h3>
+                  <h3 className="text-lg font-bold mb-4 text-gray-800 border-b pb-2">✅ 已完成任务</h3>
                   <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
                     {getDataByMonth(selectedMonth).filteredTasks.filter(t => t.completed).length === 0 ? 
                       <p className="text-gray-400 text-sm">暂无已完成任务</p> : 
