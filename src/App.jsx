@@ -45,7 +45,7 @@ export default function App() {
   });
   
   // ================= 新增：消费类别常量 =================
-  const EXPENSE_CATEGORIES = ['餐饮', '交通', '购物', '娱乐', '其他'];
+  const EXPENSE_CATEGORIES = ['外食', '交通', '超市', '娱乐', '文创','其他'];
 
   // ================= 月度汇总显示状态 =================
   const [monthlyView, setMonthlyView] = useState('overview'); // 'overview' | 'tasks' | 'expenses'
